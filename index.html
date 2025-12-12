@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>School Timetable (Dark Theme)</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            /* Your Custom Palette */
+            --bg-deep: #1A2B42;      
+            --bg-card: #2E4761;      
+            --accent: #D4BFA7;       
+            --text-main: #F5EFE7;    
+            --text-muted: #aab8c9;
+            --input-bg: #142030;
+            --danger: #ef5350;
+            --success: #66bb6a;
+        }
+
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            margin: 0; 
+            padding: 20px; 
+            background-color: var(--bg-deep); 
+            color: var(--text-main); 
+        }
+        
+        /* Layout Containers */
+        .container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            background: var(--bg-card); 
+            padding: 30px; 
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3); 
+        }
+        
+        /* Headers */
+        header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            border-bottom: 2px solid rgba(255,255,255,0.1); 
+            padding-bottom: 20px; 
+            margin-bottom: 25px; 
+        }
+        h1 { margin: 0; font-size: 26px; color: var(--accent); letter-spacing: 1px; }
+        h3 { color: var(--text-main); margin-top: 0; }
+        
+        /* Navigation Tabs */
+        .tabs { display: flex; gap: 10px; margin-bottom: 25px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; overflow-x: auto; }
+        .tab-btn {
+            padding: 10px 20px; cursor: pointer; background: transparent; 
+            border: none; font-size: 15px; color: var(--text-muted);
+            border-bottom: 3px solid transparent; transition: all 0.3s;
+            font-weight: 500; white-space: nowrap;
+        }
+        .tab-btn:hover { color: var(--text-main); background: rgba(255,255,255,0.05); border-radius: 5px 5px 0 0; }
+        .tab-btn.active { border-bottom: 3px solid var(--accent); color: var(--accent); font-weight: bold; }
+        
+        .section { display: none; animation: fadeIn 0.4s ease; }
+        .section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Forms & Inputs */
+        .form-box { 
+            border: 1px solid rgba(255,255,255,0.1); 
+            padding: 20px; 
+            background: rgba(0,0,0,0.15); 
+            border-radius: 8px;
+            margin-bottom: 20px; 
+        }
+        label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 14px; color: var(--accent); }
+        input, select {
+            padding: 10px; 
+            border: 1px solid #4a5f75; 
+            background: var(--input-bg);
+            color: var(--text-main);
+            width: 100%; 
+            margin-bottom: 15px; 
+            font-size: 14px;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        input:focus, select:focus { outline: none; border-color: var(--accent); }
+        
+        /* Buttons */
+        button { 
+            padding: 10px 18px; border: none; cursor: pointer; font-size: 14px; 
+            border-radius: 6px; font-weight: 600; transition: transform 0.1s;
+        }
+        button:active { transform: scale(0.98); }
+        .btn-primary { background-color: var(--accent); color: var(--bg-deep); }
+        .btn-primary:hover { background-color: #e6d3bd; }
+        .btn-secondary { background: transparent; border: 1px solid var(--text-muted); color: var(--text-main); }
+        .btn-danger { background-color: transparent; border: 1px solid var(--danger); color: var(--danger); }
+        .btn-danger:hover { background-color: var(--danger); color: white; }
+        
+        /* Tables */
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
+        th, td { border-bottom: 1px solid rgba(255,255,255,0.1); padding: 12px; text-align: left; }
+        th { background-color: rgba(0,0,0,0.2); color: var(--accent); }
+        
+        /* Timetable Grid */
+        .tt-grid { display: grid; grid-template-columns: 80px repeat(8, 1fr); border: 1px solid var(--text-muted); margin-top: 15px; border-radius: 4px; overflow: hidden; }
+        .tt-cell { 
+            border: 1px solid rgba(255,255,255,0.1); padding: 8px; min-height: 60px; font-size: 13px; text-align: center; 
+            display: flex; flex-direction: column; justify-content: center; background: var(--bg-deep);
+        }
+        .tt-head { background: var(--input-bg); font-weight: bold; color: var(--accent); border-bottom: 2px solid var(--accent); }
+        .tt-day { background: rgba(0,0,0,0.2); font-weight: bold; color: var(--text-muted); }
+
+        /* Modals */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(3px); align-items: center; justify-content: center; z-index: 1000; }
+        .modal-content { background: var(--bg-card); padding: 30px; border: 1px solid var(--accent); width: 500px; max-width: 90%; border-radius: 12px; box-shadow: 0 15px 40px rgba(0,0,0,0.5); color: var(--text-main); }
+
+        /* Print Settings */
+        @media print {
+            body { background: white; color: black; padding: 0; }
+            .container { box-shadow: none; border: none; width: 100%; max-width: 100%; padding: 0; background: white; }
+            header, .tabs, .form-box, button, .modal, .no-print { display: none !important; }
+            .tt-grid { page-break-inside: avoid; border: 2px solid black; margin-bottom: 30px; }
+            .tt-cell { border: 1px solid black; color: black; background: white; }
+            .tt-head { background: #eee !important; color: black; -webkit-print-color-adjust: exact; }
+            .tt-day { background: white; color: black; }
+            h2, h3 { color: black; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="schoolModal" class="modal">
+    <div class="modal-content" style="text-align: center;">
+        <h2 style="color: var(--accent)">Welcome</h2>
+        <p>Please enter your School Name to begin.</p>
+        <input type="text" id="schoolNameInput" placeholder="e.g. Govt HS Kerala">
+        <br><br>
+        <button class="btn-primary" onclick="setSchoolName()">Start</button>
+    </div>
+</div>
+
+<div id="helpModal" class="modal">
+    <div class="modal-content">
+        <div style="display:flex; justify-content:space-between; margin-bottom:15px; border-bottom:1px solid rgba(255,255,255,0.1);">
+            <h3>Instructions</h3>
+            <button class="btn-secondary" onclick="closeModal('helpModal')">✕</button>
+        </div>
+        <div style="line-height: 1.6; font-size: 15px;">
+            <p><strong>1. Multi-Class Entry:</strong> In "Setup Classes", select a Standard (e.g., 5). In the section box, type <code>A, B, C, D</code> to create 4 classes at once.</p>
+            <p><strong>2. Teachers:</strong> Add teachers in the Teachers tab.</p>
+            <p><strong>3. Allocation:</strong> Assign a teacher to each subject.</p>
+            <p><strong>4. Generate:</strong> Click Generate to build the timetable.</p>
+        </div>
+        <div style="text-align: right; margin-top: 15px;">
+            <button class="btn-primary" onclick="closeModal('helpModal')">OK</button>
+        </div>
+    </div>
+</div>
+
+<div id="msgModal" class="modal">
+    <div class="modal-content" style="text-align: center; max-width: 400px;">
+        <h3 id="msgTitle" style="color: var(--accent)">Notification</h3>
+        <p id="msgBody">Message goes here.</p>
+        <button class="btn-primary" onclick="closeModal('msgModal')">OK</button>
+    </div>
+</div>
+
+<div class="container">
+    <header>
+        <div>
+            <h1 id="displaySchoolName">School Timetable</h1>
+            <small>Dark Theme Generator</small>
+        </div>
+        <div>
+            <button class="btn-secondary" onclick="openModal('helpModal')">Help</button>
+            <button class="btn-danger" onclick="resetData()">Reset All</button>
+        </div>
+    </header>
+
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('tab1')">1. Setup Classes</button>
+        <button class="tab-btn" onclick="switchTab('tab2')">2. Teachers</button>
+        <button class="tab-btn" onclick="switchTab('tab3')">3. Allocations</button>
+        <button class="tab-btn" onclick="switchTab('tab4')">4. Generate</button>
+    </div>
+
+    <div id="tab1" class="section active">
+        <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+            <div class="form-box" style="flex: 1; min-width: 300px;">
+                <h3 style="color:var(--accent)">Add Classes</h3>
+                <label>Standard (Auto-Subjects):</label>
+                <select id="stdSelect">
+                    <option value="">-- Select Standard --</option>
+                    <option value="1">Std 1 (LP)</option>
+                    <option value="2">Std 2 (LP)</option>
+                    <option value="3">Std 3 (LP)</option>
+                    <option value="4">Std 4 (LP)</option>
+                    <option value="5">Std 5 (UP)</option>
+                    <option value="6">Std 6 (UP)</option>
+                    <option value="7">Std 7 (UP)</option>
+                    <option value="8">Std 8 (HS)</option>
+                    <option value="9">Std 9 (HS)</option>
+                    <option value="10">Std 10 (HS)</option>
+                </select>
+                
+                <label>Sections (Separate by comma for multiple):</label>
+                <input type="text" id="secInput" placeholder="e.g. A, B, C, D">
+                <small style="display:block; margin-top:-10px; margin-bottom:15px; color:var(--text-muted)">Tip: Type 'A, B' to create two classes.</small>
+                
+                <button class="btn-primary" onclick="addClass()">+ Add Class(es)</button>
+            </div>
+
+            <div class="form-box" style="flex: 1; min-width: 300px;">
+                <h3 style="color:var(--accent)">Class List</h3>
+                <div id="classList" style="max-height: 250px; overflow-y:auto;"></div>
+            </div>
+        </div>
+        
+        <div class="form-box" style="border: 1px dashed var(--accent);">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                    <strong>Bulk Import via Excel</strong><br>
+                    <small>Upload .xlsx with sheets "Teachers" and "Classes"</small>
+                </div>
+                <div>
+                    <button class="btn-secondary" onclick="downloadTemplate()">Download Template</button>
+                    <input type="file" id="excelInput" onchange="handleExcel(this)" style="display:none;">
+                    <button class="btn-primary" onclick="document.getElementById('excelInput').click()">Upload Excel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="tab2" class="section">
+        <div class="form-box">
+            <label>Teacher Name:</label>
+            <div style="display: flex; gap: 10px;">
+                <input type="text" id="teacherNameInput" style="margin-bottom: 0;">
+                <button class="btn-primary" onclick="addTeacher()">Add</button>
+            </div>
+        </div>
+        <table id="teacherTable">
+            <thead><tr><th>Name</th><th style="text-align:right;">Action</th></tr></thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <div id="tab3" class="section">
+        <h3 style="color:var(--accent)">Subject Allocations</h3>
+        <p style="color: var(--text-muted)">Assign a teacher for each subject. "Class Teacher" gets Period 1.</p>
+        <div id="allocList"></div>
+    </div>
+
+    <div id="tab4" class="section">
+        <div style="margin-bottom: 20px; background: rgba(212, 191, 167, 0.1); padding: 15px; border-radius: 6px; border-left: 4px solid var(--accent);">
+            <strong style="color: var(--accent);">Ready to Generate?</strong><br>
+            The system will attempt to solve the schedule based on your allocations.
+        </div>
+        <button class="btn-primary" onclick="generate()">Generate Timetable</button>
+        <button class="btn-secondary" onclick="window.print()">Print Result</button>
+        <hr style="border-color: rgba(255,255,255,0.1); margin: 20px 0;">
+        <div id="outputArea"></div>
+    </div>
+</div>
+
+<script>
+    // --- CURRICULUM DATA ---
+    // Defined based on your specific requirements (LP/UP/HS)
+    const CURRICULA = {
+        'LP': { 'First Lang': 10, 'Math': 6, 'EVS': 5, 'English': 5, 'Art': 3, 'Health/PE': 3, 'Work Exp': 3, 'Arabic/Skt': 4, 'Sargavela': 1 }, 
+        'UP': { 'Lang I': 4, 'Lang II': 2, 'English': 5, 'Hindi': 3, 'Math': 5, 'Science': 5, 'Social': 5, 'Work Exp': 3, 'Art': 3, 'PE': 3, 'Library': 1, 'Sargavela': 1 },
+        'HS': { 'Lang I': 4, 'Lang II': 2, 'English': 5, 'Hindi': 3, 'Math': 5, 'Physics': 2, 'Chem': 2, 'Bio': 2, 'Social': 5, 'Work Exp': 2, 'Art': 2, 'PE': 2, 'IT': 4, 'Sargavela': 1 }
+    };
+
+    let db = JSON.parse(localStorage.getItem('dark_tt_db_v2')) || {
+        schoolName: "", classes: [], teachers: [], allocations: []
+    };
+
+    function save() { localStorage.setItem('dark_tt_db_v2', JSON.stringify(db)); render(); }
+
+    // --- INITIALIZATION ---
+    window.onload = function() {
+        if(!db.schoolName) openModal('schoolModal');
+        else document.getElementById('displaySchoolName').innerText = db.schoolName;
+        
+        if(!localStorage.getItem('v2_visited')) {
+            if(db.schoolName) openModal('helpModal');
+            localStorage.setItem('v2_visited', 'true');
+        }
+        render();
+    };
+
+    function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+    function showMsg(title, body) {
+        document.getElementById('msgTitle').innerText = title;
+        document.getElementById('msgBody').innerText = body;
+        openModal('msgModal');
+    }
+
+    function switchTab(id) {
+        document.querySelectorAll('.section').forEach(d => d.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        event.target.classList.add('active');
+    }
+
+    // --- LOGIC: SCHOOL & CLASSES ---
+    function setSchoolName() {
+        let name = document.getElementById('schoolNameInput').value;
+        if(name) {
+            db.schoolName = name;
+            save();
+            closeModal('schoolModal');
+            document.getElementById('displaySchoolName').innerText = name;
+            openModal('helpModal');
+        }
+    }
+
+    // *** UPDATED MULTI-CLASS LOGIC ***
+    function addClass() {
+        let std = document.getElementById('stdSelect').value;
+        let secRaw = document.getElementById('secInput').value;
+
+        if(!std) return showMsg("Error", "Please select a Standard.");
+        if(!secRaw) return showMsg("Error", "Please enter at least one Section (e.g. A).");
+
+        // Split by comma and clean up
+        let sections = secRaw.split(',').map(s => s.trim()).filter(s => s !== "");
+
+        if(sections.length === 0) return showMsg("Error", "Invalid Section input.");
+
+        let type = (std >= 8) ? 'HS' : (std >= 5 ? 'UP' : 'LP');
+        let count = 0;
+
+        sections.forEach((sec, index) => {
+            // Check duplicate
+            let exists = db.classes.some(c => c.std == std && c.section.toLowerCase() === sec.toLowerCase());
+            if(!exists) {
+                db.classes.push({
+                    id: Date.now().toString() + "_" + index, // Ensure unique ID even in loop
+                    name: `Standard ${std} - ${sec}`,
+                    std: std,
+                    section: sec,
+                    subjects: JSON.parse(JSON.stringify(CURRICULA[type])),
+                    classTeacher: ""
+                });
+                count++;
+            }
+        });
+
+        document.getElementById('secInput').value = "";
+        save();
+        
+        if(count > 0) showMsg("Success", `Successfully added ${count} classes for Standard ${std}.`);
+        else showMsg("Info", "Classes already existed.");
+    }
+
+    function deleteClass(id) {
+        if(confirm("Remove this class?")) {
+            db.classes = db.classes.filter(c => c.id !== id);
+            save();
+        }
+    }
+
+    // --- LOGIC: TEACHERS ---
+    function addTeacher() {
+        let name = document.getElementById('teacherNameInput').value;
+        if(name) {
+            db.teachers.push({ id: Date.now().toString(), name: name });
+            document.getElementById('teacherNameInput').value = "";
+            save();
+        }
+    }
+    
+    function deleteTeacher(id) {
+        db.teachers = db.teachers.filter(t => t.id !== id);
+        save();
+    }
+
+    function resetData() { 
+        if(confirm("Are you sure? This will delete all data.")) { 
+            localStorage.removeItem('dark_tt_db_v2'); 
+            location.reload(); 
+        } 
+    }
+
+    // --- RENDER UI ---
+    function render() {
+        // Render Class List
+        const cList = document.getElementById('classList');
+        if(db.classes.length === 0) cList.innerHTML = "<p style='color:var(--text-muted)'>No classes added.</p>";
+        else {
+            // Sort by standard then section
+            let sorted = [...db.classes].sort((a,b) => (a.std - b.std) || a.section.localeCompare(b.section));
+            cList.innerHTML = sorted.map(c => `
+                <div style="background:var(--input-bg); padding:10px; margin-bottom:8px; border-radius:4px; display:flex; justify-content:space-between; align-items:center; border:1px solid rgba(255,255,255,0.05);">
+                    <strong>${c.name}</strong>
+                    <button class="btn-danger" style="padding:4px 8px; font-size:12px;" onclick="deleteClass('${c.id}')">✕</button>
+                </div>
+            `).join('');
+        }
+
+        // Render Teachers
+        const tBody = document.querySelector('#teacherTable tbody');
+        tBody.innerHTML = db.teachers.length ? db.teachers.map(t => 
+            `<tr>
+                <td>${t.name}</td>
+                <td style="text-align:right;"><button class="btn-danger" style="padding:5px 10px;" onclick="deleteTeacher('${t.id}')">Delete</button></td>
+            </tr>`
+        ).join('') : '<tr><td colspan="2" style="text-align:center; color:var(--text-muted)">No teachers yet.</td></tr>';
+
+        // Render Allocations
+        renderAllocations();
+    }
+
+    function renderAllocations() {
+        const allocDiv = document.getElementById('allocList');
+        if(!db.classes.length || !db.teachers.length) {
+            allocDiv.innerHTML = "<p>Please add Classes and Teachers first.</p>";
+            return;
+        }
+
+        let teacherOpts = `<option value="">-- Select --</option>` + db.teachers.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+
+        // Group allocs by standard for cleaner UI
+        let sortedClasses = [...db.classes].sort((a,b) => a.std - b.std);
+
+        allocDiv.innerHTML = sortedClasses.map(c => `
+            <div class="form-box">
+                <div style="display:flex; justify-content:space-between; margin-bottom:10px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:5px;">
+                    <strong style="color: var(--accent); font-size: 16px;">${c.name}</strong>
+                    <div>
+                        <span style="font-size:13px; color:var(--text-muted);">Class Teacher:</span> 
+                        <select style="width:150px; margin-bottom:0;" onchange="updateCT('${c.id}', this.value)">
+                            ${teacherOpts.replace(`value="${c.classTeacher}"`, `value="${c.classTeacher}" selected`)}
+                        </select>
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px;">
+                    ${Object.entries(c.subjects).map(([sub, count]) => {
+                        let tid = db.allocations.find(a => a.cid === c.id && a.sub === sub)?.tid || "";
+                        let borderStyle = tid ? 'border-color: var(--accent);' : '';
+                        return `
+                        <div style="background: rgba(0,0,0,0.2); padding: 8px; border-radius: 4px; border: 1px solid transparent; ${borderStyle}">
+                            <div style="display:flex; justify-content:space-between; font-size: 12px; margin-bottom: 5px;">
+                                <span>${sub}</span>
+                                <span style="color: var(--text-muted)">${count} pds</span>
+                            </div>
+                            <select style="margin-bottom:0; font-size:13px;" onchange="updateAlloc('${c.id}', '${sub}', this.value)">
+                                ${teacherOpts.replace(`value="${tid}"`, `value="${tid}" selected`)}
+                            </select>
+                        </div>`;
+                    }).join('')}
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function updateCT(cid, tid) { db.classes.find(c => c.id === cid).classTeacher = tid; save(); }
+    function updateAlloc(cid, sub, tid) {
+        db.allocations = db.allocations.filter(a => !(a.cid === cid && a.sub === sub));
+        if(tid) db.allocations.push({ cid, sub, tid });
+        save();
+    }
+
+    // --- EXCEL LOGIC ---
+    function downloadTemplate() {
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet([{Name:"John Doe"}]), "Teachers");
+        // Update template to imply single entry is standard
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet([{Standard:5, Section:"A"}, {Standard:5, Section:"B"}]), "Classes");
+        XLSX.writeFile(wb, "Timetable_Template.xlsx");
+    }
+
+    function handleExcel(input) {
+        const reader = new FileReader();
+        reader.onload = e => {
+            const wb = XLSX.read(e.target.result, {type:'array'});
+            if(wb.Sheets['Teachers']) {
+                XLSX.utils.sheet_to_json(wb.Sheets['Teachers']).forEach(r => {
+                    if(r.Name) db.teachers.push({id:Date.now()+Math.random().toString(), name:r.Name});
+                });
+            }
+            if(wb.Sheets['Classes']) {
+                XLSX.utils.sheet_to_json(wb.Sheets['Classes']).forEach(r => {
+                    let type = (r.Standard >= 8) ? 'HS' : (r.Standard >= 5 ? 'UP' : 'LP');
+                    db.classes.push({
+                        id:Date.now()+Math.random().toString(), 
+                        name:`Standard ${r.Standard} - ${r.Section}`, 
+                        std:r.Standard,
+                        section: r.Section,
+                        subjects: JSON.parse(JSON.stringify(CURRICULA[type])), classTeacher:""
+                    });
+                });
+            }
+            save(); showMsg("Success", "Data imported successfully.");
+        };
+        reader.readAsArrayBuffer(input.files[0]);
+    }
+
+    // --- GENERATE ---
+    function generate() {
+        let out = document.getElementById('outputArea');
+        out.innerHTML = "<p style='color:var(--text-muted)'>Generating timetable...</p>";
+        
+        let schedule = Array(5).fill().map(() => Array(8).fill().map(() => ({})));
+        
+        // 1. Lock Class Teachers
+        db.classes.forEach(c => {
+            if(c.classTeacher) {
+                for(let d=0; d<5; d++) {
+                    let sub = db.allocations.find(a => a.cid === c.id && a.tid === c.classTeacher)?.sub || "Class Teacher";
+                    schedule[d][0][c.id] = { sub, tid: c.classTeacher };
+                }
+            }
+        });
+
+        // 2. Build Queue
+        let queue = [];
+        db.classes.forEach(c => {
+            Object.entries(c.subjects).forEach(([sub, count]) => {
+                let tid = db.allocations.find(a => a.cid === c.id && a.sub === sub)?.tid;
+                let priority = (sub.match(/Math|Physics|Chem/i)) ? 2 : 1;
+                for(let i=0; i<count; i++) queue.push({ cid: c.id, sub, tid, priority });
+            });
+        });
+        queue.sort((a,b) => b.priority - a.priority);
+
+        // 3. Solve
+        const isBusy = (tid, d, p) => tid && db.classes.some(c => schedule[d][p][c.id]?.tid === tid);
+
+        queue.forEach(item => {
+            let placed = false;
+            let days = [0,1,2,3,4].sort(()=>Math.random()-0.5);
+            let periods = (item.priority===2) ? [1,2,3,4,5,6,7] : [1,2,3,4,5,6,7];
+            
+            for(let d of days) {
+                for(let p of periods) {
+                    if(!schedule[d][p][item.cid] && !isBusy(item.tid, d, p)) {
+                        schedule[d][p][item.cid] = item;
+                        placed = true;
+                        break;
+                    }
+                }
+                if(placed) break;
+            }
+        });
+
+        // 4. Render Result
+        let html = `<h2 style="color:var(--accent); text-align:center;">${db.schoolName}</h2>`;
+        // Sort output by standard
+        let sortedClasses = [...db.classes].sort((a,b) => (a.std - b.std) || a.section.localeCompare(b.section));
+        
+        sortedClasses.forEach(c => {
+            html += `<h3 style="color:var(--text-main); margin-top:30px; border-bottom:1px solid var(--accent); display:inline-block;">${c.name}</h3>`;
+            html += `<div class="tt-grid">
+                <div class="tt-head tt-cell">Day</div>`;
+            for(let i=1; i<=8; i++) html += `<div class="tt-head tt-cell">P${i}</div>`;
+            
+            ['MON','TUE','WED','THU','FRI'].forEach((day, d) => {
+                html += `<div class="tt-day tt-cell">${day}</div>`;
+                for(let p=0; p<8; p++) {
+                    let cell = schedule[d][p][c.id];
+                    let tName = cell ? (db.teachers.find(t=>t.id===cell.tid)?.name || 'TBA') : '';
+                    html += `<div class="tt-cell">
+                        ${cell ? `<b style="color:var(--accent)">${cell.sub}</b><br><small style="color:var(--text-muted)">${tName}</small>` : '-'}
+                    </div>`;
+                }
+            });
+            html += `</div>`;
+        });
+        out.innerHTML = html;
+    }
+</script>
+</body>
+</html>
