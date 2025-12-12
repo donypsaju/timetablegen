@@ -3,576 +3,666 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>School Timetable (Dark Theme)</title>
+    <title>Smart School Timetable (Tailwind Edition)</title>
+    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // Configure Tailwind with your Custom Palette
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        deep: '#1A2B42',      /* Main Background */
+                        surface: '#2E4761',   /* Cards */
+                        accent: '#D4BFA7',    /* Buttons/Highlights */
+                        cream: '#F5EFE7',     /* Text */
+                        input: '#142030',     /* Input Fields */
+                        danger: '#ef5350',
+                        success: '#66bb6a'
+                    }
+                }
+            }
+        }
+    </script>
     <style>
-        :root {
-            /* Your Custom Palette */
-            --bg-deep: #1A2B42;      
-            --bg-card: #2E4761;      
-            --accent: #D4BFA7;       
-            --text-main: #F5EFE7;    
-            --text-muted: #aab8c9;
-            --input-bg: #142030;
-            --danger: #ef5350;
-            --success: #66bb6a;
-        }
-
-        body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            margin: 0; 
-            padding: 20px; 
-            background-color: var(--bg-deep); 
-            color: var(--text-main); 
-        }
+        /* Custom Scrollbar for dark theme */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #1A2B42; }
+        ::-webkit-scrollbar-thumb { background: #2E4761; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #D4BFA7; }
         
-        /* Layout Containers */
-        .container { 
-            max-width: 1200px; 
-            margin: 0 auto; 
-            background: var(--bg-card); 
-            padding: 30px; 
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3); 
-        }
-        
-        /* Headers */
-        header { 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            border-bottom: 2px solid rgba(255,255,255,0.1); 
-            padding-bottom: 20px; 
-            margin-bottom: 25px; 
-        }
-        h1 { margin: 0; font-size: 26px; color: var(--accent); letter-spacing: 1px; }
-        h3 { color: var(--text-main); margin-top: 0; }
-        
-        /* Navigation Tabs */
-        .tabs { display: flex; gap: 10px; margin-bottom: 25px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; overflow-x: auto; }
-        .tab-btn {
-            padding: 10px 20px; cursor: pointer; background: transparent; 
-            border: none; font-size: 15px; color: var(--text-muted);
-            border-bottom: 3px solid transparent; transition: all 0.3s;
-            font-weight: 500; white-space: nowrap;
-        }
-        .tab-btn:hover { color: var(--text-main); background: rgba(255,255,255,0.05); border-radius: 5px 5px 0 0; }
-        .tab-btn.active { border-bottom: 3px solid var(--accent); color: var(--accent); font-weight: bold; }
-        
-        .section { display: none; animation: fadeIn 0.4s ease; }
-        .section.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* Forms & Inputs */
-        .form-box { 
-            border: 1px solid rgba(255,255,255,0.1); 
-            padding: 20px; 
-            background: rgba(0,0,0,0.15); 
-            border-radius: 8px;
-            margin-bottom: 20px; 
-        }
-        label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 14px; color: var(--accent); }
-        input, select {
-            padding: 10px; 
-            border: 1px solid #4a5f75; 
-            background: var(--input-bg);
-            color: var(--text-main);
-            width: 100%; 
-            margin-bottom: 15px; 
-            font-size: 14px;
-            border-radius: 4px;
-            box-sizing: border-box;
-        }
-        input:focus, select:focus { outline: none; border-color: var(--accent); }
-        
-        /* Buttons */
-        button { 
-            padding: 10px 18px; border: none; cursor: pointer; font-size: 14px; 
-            border-radius: 6px; font-weight: 600; transition: transform 0.1s;
-        }
-        button:active { transform: scale(0.98); }
-        .btn-primary { background-color: var(--accent); color: var(--bg-deep); }
-        .btn-primary:hover { background-color: #e6d3bd; }
-        .btn-secondary { background: transparent; border: 1px solid var(--text-muted); color: var(--text-main); }
-        .btn-danger { background-color: transparent; border: 1px solid var(--danger); color: var(--danger); }
-        .btn-danger:hover { background-color: var(--danger); color: white; }
-        
-        /* Tables */
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
-        th, td { border-bottom: 1px solid rgba(255,255,255,0.1); padding: 12px; text-align: left; }
-        th { background-color: rgba(0,0,0,0.2); color: var(--accent); }
-        
-        /* Timetable Grid */
-        .tt-grid { display: grid; grid-template-columns: 80px repeat(8, 1fr); border: 1px solid var(--text-muted); margin-top: 15px; border-radius: 4px; overflow: hidden; }
-        .tt-cell { 
-            border: 1px solid rgba(255,255,255,0.1); padding: 8px; min-height: 60px; font-size: 13px; text-align: center; 
-            display: flex; flex-direction: column; justify-content: center; background: var(--bg-deep);
-        }
-        .tt-head { background: var(--input-bg); font-weight: bold; color: var(--accent); border-bottom: 2px solid var(--accent); }
-        .tt-day { background: rgba(0,0,0,0.2); font-weight: bold; color: var(--text-muted); }
-
-        /* Modals */
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(3px); align-items: center; justify-content: center; z-index: 1000; }
-        .modal-content { background: var(--bg-card); padding: 30px; border: 1px solid var(--accent); width: 500px; max-width: 90%; border-radius: 12px; box-shadow: 0 15px 40px rgba(0,0,0,0.5); color: var(--text-main); }
-
-        /* Print Settings */
         @media print {
-            body { background: white; color: black; padding: 0; }
-            .container { box-shadow: none; border: none; width: 100%; max-width: 100%; padding: 0; background: white; }
-            header, .tabs, .form-box, button, .modal, .no-print { display: none !important; }
-            .tt-grid { page-break-inside: avoid; border: 2px solid black; margin-bottom: 30px; }
-            .tt-cell { border: 1px solid black; color: black; background: white; }
-            .tt-head { background: #eee !important; color: black; -webkit-print-color-adjust: exact; }
-            .tt-day { background: white; color: black; }
-            h2, h3 { color: black; }
+            .no-print { display: none !important; }
+            body { background-color: white !important; color: black !important; }
+            .print-border { border: 1px solid black !important; }
+            .print-bg-white { background-color: white !important; }
+            .print-text-black { color: black !important; }
+            .break-inside-avoid { break-inside: avoid; }
         }
+        
+        .fade-in { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
-<body>
+<body class="bg-deep text-cream font-sans min-h-screen p-4 md:p-8">
 
-<div id="schoolModal" class="modal">
-    <div class="modal-content" style="text-align: center;">
-        <h2 style="color: var(--accent)">Welcome</h2>
-        <p>Please enter your School Name to begin.</p>
-        <input type="text" id="schoolNameInput" placeholder="e.g. Govt HS Kerala">
-        <br><br>
-        <button class="btn-primary" onclick="setSchoolName()">Start</button>
-    </div>
-</div>
-
-<div id="helpModal" class="modal">
-    <div class="modal-content">
-        <div style="display:flex; justify-content:space-between; margin-bottom:15px; border-bottom:1px solid rgba(255,255,255,0.1);">
-            <h3>Instructions</h3>
-            <button class="btn-secondary" onclick="closeModal('helpModal')">✕</button>
-        </div>
-        <div style="line-height: 1.6; font-size: 15px;">
-            <p><strong>1. Multi-Class Entry:</strong> In "Setup Classes", select a Standard (e.g., 5). In the section box, type <code>A, B, C, D</code> to create 4 classes at once.</p>
-            <p><strong>2. Teachers:</strong> Add teachers in the Teachers tab.</p>
-            <p><strong>3. Allocation:</strong> Assign a teacher to each subject.</p>
-            <p><strong>4. Generate:</strong> Click Generate to build the timetable.</p>
-        </div>
-        <div style="text-align: right; margin-top: 15px;">
-            <button class="btn-primary" onclick="closeModal('helpModal')">OK</button>
+    <div id="schoolModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+        <div class="bg-surface border border-accent p-8 rounded-xl shadow-2xl max-w-md w-full text-center">
+            <h2 class="text-2xl font-bold text-accent mb-4">Welcome</h2>
+            <p class="text-gray-300 mb-6">Please enter your School Name to begin.</p>
+            <input type="text" id="schoolNameInput" placeholder="e.g. Govt HS Kerala" 
+                   class="w-full bg-input border border-gray-600 rounded p-3 text-white focus:border-accent outline-none mb-6">
+            <button onclick="setSchoolName()" class="bg-accent text-deep font-bold py-2 px-6 rounded hover:bg-white transition w-full">Start</button>
         </div>
     </div>
-</div>
 
-<div id="msgModal" class="modal">
-    <div class="modal-content" style="text-align: center; max-width: 400px;">
-        <h3 id="msgTitle" style="color: var(--accent)">Notification</h3>
-        <p id="msgBody">Message goes here.</p>
-        <button class="btn-primary" onclick="closeModal('msgModal')">OK</button>
-    </div>
-</div>
-
-<div class="container">
-    <header>
-        <div>
-            <h1 id="displaySchoolName">School Timetable</h1>
-            <small>Dark Theme Generator</small>
-        </div>
-        <div>
-            <button class="btn-secondary" onclick="openModal('helpModal')">Help</button>
-            <button class="btn-danger" onclick="resetData()">Reset All</button>
-        </div>
-    </header>
-
-    <div class="tabs">
-        <button class="tab-btn active" onclick="switchTab('tab1')">1. Setup Classes</button>
-        <button class="tab-btn" onclick="switchTab('tab2')">2. Teachers</button>
-        <button class="tab-btn" onclick="switchTab('tab3')">3. Allocations</button>
-        <button class="tab-btn" onclick="switchTab('tab4')">4. Generate</button>
-    </div>
-
-    <div id="tab1" class="section active">
-        <div style="display: flex; gap: 20px; flex-wrap: wrap;">
-            <div class="form-box" style="flex: 1; min-width: 300px;">
-                <h3 style="color:var(--accent)">Add Classes</h3>
-                <label>Standard (Auto-Subjects):</label>
-                <select id="stdSelect">
-                    <option value="">-- Select Standard --</option>
-                    <option value="1">Std 1 (LP)</option>
-                    <option value="2">Std 2 (LP)</option>
-                    <option value="3">Std 3 (LP)</option>
-                    <option value="4">Std 4 (LP)</option>
-                    <option value="5">Std 5 (UP)</option>
-                    <option value="6">Std 6 (UP)</option>
-                    <option value="7">Std 7 (UP)</option>
-                    <option value="8">Std 8 (HS)</option>
-                    <option value="9">Std 9 (HS)</option>
-                    <option value="10">Std 10 (HS)</option>
-                </select>
-                
-                <label>Sections (Separate by comma for multiple):</label>
-                <input type="text" id="secInput" placeholder="e.g. A, B, C, D">
-                <small style="display:block; margin-top:-10px; margin-bottom:15px; color:var(--text-muted)">Tip: Type 'A, B' to create two classes.</small>
-                
-                <button class="btn-primary" onclick="addClass()">+ Add Class(es)</button>
+    <div id="helpModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+        <div class="bg-surface border border-gray-600 p-6 rounded-xl shadow-2xl max-w-lg w-full">
+            <div class="flex justify-between items-center mb-4 border-b border-gray-600 pb-2">
+                <h3 class="text-xl font-bold text-accent">Instructions</h3>
+                <button onclick="closeModal('helpModal')" class="text-gray-400 hover:text-white">✕</button>
             </div>
-
-            <div class="form-box" style="flex: 1; min-width: 300px;">
-                <h3 style="color:var(--accent)">Class List</h3>
-                <div id="classList" style="max-height: 250px; overflow-y:auto;"></div>
+            <div class="space-y-3 text-sm text-gray-200">
+                <p><strong class="text-accent">1. Multi-Class:</strong> In Setup, enter "A, B, C" in the section box to create 3 classes instantly.</p>
+                <p><strong class="text-accent">2. Constraints:</strong> Use the new 'Constraints' tab to block teacher times (e.g., Principal is busy Mon P1) or set Subject rules (Math = Morning).</p>
+                <p><strong class="text-accent">3. Class Teacher:</strong> Assigned Class Teachers are automatically locked to Period 1.</p>
+                <p><strong class="text-accent">4. Excel:</strong> Use the template to bulk upload data.</p>
+            </div>
+            <div class="mt-6 text-right">
+                <button onclick="closeModal('helpModal')" class="bg-accent text-deep font-bold py-2 px-6 rounded hover:bg-white transition">Got it</button>
             </div>
         </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto bg-surface rounded-2xl shadow-2xl border border-gray-700 overflow-hidden min-h-[80vh] flex flex-col">
         
-        <div class="form-box" style="border: 1px dashed var(--accent);">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-                <div>
-                    <strong>Bulk Import via Excel</strong><br>
-                    <small>Upload .xlsx with sheets "Teachers" and "Classes"</small>
-                </div>
-                <div>
-                    <button class="btn-secondary" onclick="downloadTemplate()">Download Template</button>
-                    <input type="file" id="excelInput" onchange="handleExcel(this)" style="display:none;">
-                    <button class="btn-primary" onclick="document.getElementById('excelInput').click()">Upload Excel</button>
+        <header class="bg-black/20 p-6 flex flex-col md:flex-row justify-between items-center border-b border-gray-700 no-print">
+            <div class="mb-4 md:mb-0">
+                <h1 id="displaySchoolName" class="text-3xl font-bold text-accent tracking-wide">School Timetable</h1>
+                <p class="text-sm text-gray-400">Advanced Scheduler with Constraints</p>
+            </div>
+            <div class="flex gap-3">
+                <button onclick="openModal('helpModal')" class="border border-gray-500 text-gray-300 px-4 py-2 rounded hover:bg-white/5 transition">Help</button>
+                <button onclick="resetData()" class="border border-danger text-danger px-4 py-2 rounded hover:bg-danger hover:text-white transition">Reset</button>
+            </div>
+        </header>
+
+        <div class="flex overflow-x-auto bg-black/10 p-2 gap-2 border-b border-gray-700 no-print">
+            <button onclick="switchTab('tab1')" class="tab-btn active px-6 py-3 rounded-lg text-gray-400 font-medium hover:text-white transition whitespace-nowrap" id="btn-tab1">1. Classes</button>
+            <button onclick="switchTab('tab2')" class="tab-btn px-6 py-3 rounded-lg text-gray-400 font-medium hover:text-white transition whitespace-nowrap" id="btn-tab2">2. Teachers</button>
+            <button onclick="switchTab('tab3')" class="tab-btn px-6 py-3 rounded-lg text-gray-400 font-medium hover:text-white transition whitespace-nowrap" id="btn-tab3">3. Allocations</button>
+            <button onclick="switchTab('tab4')" class="tab-btn px-6 py-3 rounded-lg text-gray-400 font-medium hover:text-white transition whitespace-nowrap" id="btn-tab4">4. Constraints</button>
+            <button onclick="switchTab('tab5')" class="tab-btn px-6 py-3 rounded-lg text-accent font-bold hover:text-white transition whitespace-nowrap" id="btn-tab5">5. Generate</button>
+        </div>
+
+        <div class="p-6 md:p-8 flex-grow bg-deep/50 relative">
+
+            <div id="tab1" class="section fade-in">
+                <div class="grid md:grid-cols-2 gap-8">
+                    <div class="bg-surface border border-gray-600 rounded-xl p-6 shadow-lg">
+                        <h3 class="text-xl font-bold text-accent mb-4 border-b border-gray-700 pb-2">Add Classes</h3>
+                        
+                        <label class="block text-sm font-bold text-gray-300 mb-2">Standard (Auto-Curriculum)</label>
+                        <select id="stdSelect" class="w-full bg-input border border-gray-600 rounded p-3 text-cream focus:border-accent outline-none mb-4">
+                            <option value="">-- Select Standard --</option>
+                            <option value="1">Std 1 (LP)</option>
+                            <option value="2">Std 2 (LP)</option>
+                            <option value="3">Std 3 (LP)</option>
+                            <option value="4">Std 4 (LP)</option>
+                            <option value="5">Std 5 (UP)</option>
+                            <option value="6">Std 6 (UP)</option>
+                            <option value="7">Std 7 (UP)</option>
+                            <option value="8">Std 8 (HS)</option>
+                            <option value="9">Std 9 (HS)</option>
+                            <option value="10">Std 10 (HS)</option>
+                        </select>
+
+                        <label class="block text-sm font-bold text-gray-300 mb-2">Sections (Multi-entry)</label>
+                        <input type="text" id="secInput" placeholder="e.g. A, B, C, Ruby" 
+                               class="w-full bg-input border border-gray-600 rounded p-3 text-cream focus:border-accent outline-none mb-2">
+                        <p class="text-xs text-gray-400 mb-6">Separate by commas to add multiple classes at once.</p>
+
+                        <button onclick="addClass()" class="w-full bg-accent text-deep font-bold py-3 rounded hover:bg-white transition">
+                            + Add Classes
+                        </button>
+                    </div>
+
+                    <div class="bg-surface border border-gray-600 rounded-xl p-6 shadow-lg flex flex-col">
+                        <div class="flex justify-between items-center mb-4 border-b border-gray-700 pb-2">
+                            <h3 class="text-xl font-bold text-accent">Active Classes</h3>
+                            <div class="flex gap-2">
+                                <button onclick="downloadTemplate()" class="text-xs border border-gray-500 px-2 py-1 rounded hover:bg-white/10">Template</button>
+                                <button onclick="document.getElementById('excelInput').click()" class="text-xs bg-green-700 px-2 py-1 rounded hover:bg-green-600 text-white">Import Excel</button>
+                                <input type="file" id="excelInput" onchange="handleExcel(this)" class="hidden">
+                            </div>
+                        </div>
+                        <div id="classList" class="overflow-y-auto max-h-[400px] space-y-2 pr-2">
+                            </div>
+                    </div>
                 </div>
             </div>
-        </div>
-    </div>
 
-    <div id="tab2" class="section">
-        <div class="form-box">
-            <label>Teacher Name:</label>
-            <div style="display: flex; gap: 10px;">
-                <input type="text" id="teacherNameInput" style="margin-bottom: 0;">
-                <button class="btn-primary" onclick="addTeacher()">Add</button>
+            <div id="tab2" class="section hidden fade-in">
+                <div class="max-w-2xl mx-auto bg-surface border border-gray-600 rounded-xl p-6 shadow-lg">
+                    <h3 class="text-xl font-bold text-accent mb-6">Manage Teachers</h3>
+                    <div class="flex gap-4 mb-6">
+                        <input type="text" id="teacherNameInput" placeholder="Teacher Name" 
+                               class="flex-grow bg-input border border-gray-600 rounded p-3 text-cream focus:border-accent outline-none">
+                        <button onclick="addTeacher()" class="bg-accent text-deep font-bold px-6 rounded hover:bg-white transition">Add</button>
+                    </div>
+                    <div class="overflow-hidden rounded border border-gray-600">
+                        <table class="w-full text-left">
+                            <thead class="bg-black/20 text-accent">
+                                <tr>
+                                    <th class="p-4">Name</th>
+                                    <th class="p-4 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="teacherTableBody" class="divide-y divide-gray-700">
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
+
+            <div id="tab3" class="section hidden fade-in">
+                <div class="flex justify-between items-end mb-6">
+                    <div>
+                        <h3 class="text-2xl font-bold text-accent">Subject Allocations</h3>
+                        <p class="text-gray-400">Assign teachers to subjects. <span class="text-accent">Class Teachers take Period 1.</span></p>
+                    </div>
+                </div>
+                <div id="allocList" class="grid xl:grid-cols-2 gap-6">
+                    </div>
+            </div>
+
+            <div id="tab4" class="section hidden fade-in">
+                <div class="grid lg:grid-cols-3 gap-8 h-full">
+                    
+                    <div class="bg-surface border border-gray-600 rounded-xl p-6 h-fit">
+                        <h3 class="text-lg font-bold text-accent mb-4">Global Rules</h3>
+                        <div class="space-y-4">
+                            <label class="flex items-center gap-3 p-3 bg-black/20 rounded cursor-pointer">
+                                <input type="checkbox" id="constConsecutive" class="w-5 h-5 accent-accent" checked>
+                                <span class="text-sm">Avoid >2 consecutive periods</span>
+                            </label>
+                            <label class="flex items-center gap-3 p-3 bg-black/20 rounded cursor-pointer">
+                                <input type="checkbox" id="constEvenDist" class="w-5 h-5 accent-accent" checked>
+                                <span class="text-sm">Distribute subjects evenly</span>
+                            </label>
+                            <div class="p-3 bg-black/20 rounded">
+                                <p class="text-xs text-gray-400 mb-2">Math/Science Preference</p>
+                                <select id="constMathTime" class="w-full bg-input text-sm border border-gray-600 rounded p-2">
+                                    <option value="morning">Morning Only (P1-P4)</option>
+                                    <option value="any">Any Time</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="lg:col-span-2 bg-surface border border-gray-600 rounded-xl p-6">
+                        <h3 class="text-lg font-bold text-accent mb-2">Teacher Unavailability</h3>
+                        <p class="text-sm text-gray-400 mb-4">Select a teacher, then click cells to mark them as <span class="text-danger">Busy (Red)</span>.</p>
+                        
+                        <div class="flex gap-4 mb-4">
+                            <select id="constraintTeacherSelect" onchange="renderConstraintGrid()" class="flex-grow bg-input border border-gray-600 rounded p-2 text-cream">
+                                <option value="">-- Select Teacher --</option>
+                            </select>
+                        </div>
+
+                        <div id="constraintGrid" class="grid grid-cols-6 gap-1 text-center text-sm opacity-50 pointer-events-none">
+                            <div class="p-2 bg-black/30 font-bold text-gray-500">Day/Pd</div>
+                            <div class="p-2 bg-black/30">1</div><div class="p-2 bg-black/30">2</div><div class="p-2 bg-black/30">3</div><div class="p-2 bg-black/30">4</div><div class="p-2 bg-black/30">5...</div>
+                            </div>
+                        <p id="gridHint" class="text-center mt-8 text-gray-500">Please select a teacher above to edit schedule.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab5" class="section hidden fade-in">
+                <div class="bg-surface border border-accent/30 rounded-xl p-6 mb-8 no-print">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h3 class="text-xl font-bold text-accent">Ready to Generate?</h3>
+                            <p class="text-gray-400 text-sm mt-1">System will respect all constraints defined in Tab 4.</p>
+                        </div>
+                        <div class="flex gap-4">
+                            <button onclick="window.print()" class="border border-gray-500 px-6 py-2 rounded hover:bg-white/10 transition">Print PDF</button>
+                            <button onclick="generate()" class="bg-accent text-deep font-bold px-8 py-3 rounded shadow-lg hover:bg-white hover:scale-105 transition transform">
+                                🚀 Generate Timetable
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div id="outputArea" class="space-y-8"></div>
+            </div>
+
         </div>
-        <table id="teacherTable">
-            <thead><tr><th>Name</th><th style="text-align:right;">Action</th></tr></thead>
-            <tbody></tbody>
-        </table>
     </div>
 
-    <div id="tab3" class="section">
-        <h3 style="color:var(--accent)">Subject Allocations</h3>
-        <p style="color: var(--text-muted)">Assign a teacher for each subject. "Class Teacher" gets Period 1.</p>
-        <div id="allocList"></div>
-    </div>
+    <script>
+        // --- CONFIGURATION ---
+        const CURRICULA = {
+            'LP': { 'First Lang': 10, 'Math': 6, 'EVS': 5, 'English': 5, 'Art': 3, 'PE': 3, 'Work Exp': 3, 'Arabic/Skt': 4, 'Sargavela': 1 }, 
+            'UP': { 'Lang I': 4, 'Lang II': 2, 'English': 5, 'Hindi': 3, 'Math': 5, 'Science': 5, 'Social': 5, 'Work Exp': 3, 'Art': 3, 'PE': 3, 'Library': 1, 'Sargavela': 1 },
+            'HS': { 'Lang I': 4, 'Lang II': 2, 'English': 5, 'Hindi': 3, 'Math': 5, 'Physics': 2, 'Chem': 2, 'Bio': 2, 'Social': 5, 'Work Exp': 2, 'Art': 2, 'PE': 2, 'IT': 4, 'Sargavela': 1 }
+        };
 
-    <div id="tab4" class="section">
-        <div style="margin-bottom: 20px; background: rgba(212, 191, 167, 0.1); padding: 15px; border-radius: 6px; border-left: 4px solid var(--accent);">
-            <strong style="color: var(--accent);">Ready to Generate?</strong><br>
-            The system will attempt to solve the schedule based on your allocations.
-        </div>
-        <button class="btn-primary" onclick="generate()">Generate Timetable</button>
-        <button class="btn-secondary" onclick="window.print()">Print Result</button>
-        <hr style="border-color: rgba(255,255,255,0.1); margin: 20px 0;">
-        <div id="outputArea"></div>
-    </div>
-</div>
+        // State
+        let db = JSON.parse(localStorage.getItem('tailwind_tt_db')) || {
+            schoolName: "", 
+            classes: [], 
+            teachers: [], 
+            allocations: [],
+            // New Constraint Data: { teacherId: [ "0-0", "0-1" ] } -> "DayIndex-PeriodIndex"
+            constraints: { blocked: {} } 
+        };
 
-<script>
-    // --- CURRICULUM DATA ---
-    // Defined based on your specific requirements (LP/UP/HS)
-    const CURRICULA = {
-        'LP': { 'First Lang': 10, 'Math': 6, 'EVS': 5, 'English': 5, 'Art': 3, 'Health/PE': 3, 'Work Exp': 3, 'Arabic/Skt': 4, 'Sargavela': 1 }, 
-        'UP': { 'Lang I': 4, 'Lang II': 2, 'English': 5, 'Hindi': 3, 'Math': 5, 'Science': 5, 'Social': 5, 'Work Exp': 3, 'Art': 3, 'PE': 3, 'Library': 1, 'Sargavela': 1 },
-        'HS': { 'Lang I': 4, 'Lang II': 2, 'English': 5, 'Hindi': 3, 'Math': 5, 'Physics': 2, 'Chem': 2, 'Bio': 2, 'Social': 5, 'Work Exp': 2, 'Art': 2, 'PE': 2, 'IT': 4, 'Sargavela': 1 }
-    };
-
-    let db = JSON.parse(localStorage.getItem('dark_tt_db_v2')) || {
-        schoolName: "", classes: [], teachers: [], allocations: []
-    };
-
-    function save() { localStorage.setItem('dark_tt_db_v2', JSON.stringify(db)); render(); }
-
-    // --- INITIALIZATION ---
-    window.onload = function() {
-        if(!db.schoolName) openModal('schoolModal');
-        else document.getElementById('displaySchoolName').innerText = db.schoolName;
-        
-        if(!localStorage.getItem('v2_visited')) {
-            if(db.schoolName) openModal('helpModal');
-            localStorage.setItem('v2_visited', 'true');
+        function save() { 
+            localStorage.setItem('tailwind_tt_db', JSON.stringify(db)); 
+            renderUI();
         }
-        render();
-    };
 
-    function openModal(id) { document.getElementById(id).style.display = 'flex'; }
-    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-    function showMsg(title, body) {
-        document.getElementById('msgTitle').innerText = title;
-        document.getElementById('msgBody').innerText = body;
-        openModal('msgModal');
-    }
+        // --- INIT ---
+        window.onload = function() {
+            if(!db.schoolName) document.getElementById('schoolModal').classList.remove('hidden');
+            else document.getElementById('displaySchoolName').innerText = db.schoolName;
+            
+            // Populate Dropdowns
+            renderUI();
+        };
 
-    function switchTab(id) {
-        document.querySelectorAll('.section').forEach(d => d.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        event.target.classList.add('active');
-    }
+        function switchTab(id) {
+            document.querySelectorAll('.section').forEach(el => el.classList.add('hidden'));
+            document.getElementById(id).classList.remove('hidden');
+            document.querySelectorAll('.tab-btn').forEach(el => {
+                el.classList.remove('text-accent', 'border-accent', 'font-bold');
+                el.classList.add('text-gray-400');
+            });
+            const btn = document.getElementById('btn-' + id);
+            btn.classList.remove('text-gray-400');
+            btn.classList.add('text-accent', 'font-bold');
 
-    // --- LOGIC: SCHOOL & CLASSES ---
-    function setSchoolName() {
-        let name = document.getElementById('schoolNameInput').value;
-        if(name) {
+            if(id === 'tab4') initConstraintUI(); // Refresh constraint dropdowns
+        }
+
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+        function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+
+        function setSchoolName() {
+            const name = document.getElementById('schoolNameInput').value;
+            if(!name) return;
             db.schoolName = name;
             save();
             closeModal('schoolModal');
             document.getElementById('displaySchoolName').innerText = name;
-            openModal('helpModal');
         }
-    }
 
-    // *** UPDATED MULTI-CLASS LOGIC ***
-    function addClass() {
-        let std = document.getElementById('stdSelect').value;
-        let secRaw = document.getElementById('secInput').value;
+        // --- CLASS LOGIC (MULTI ADD) ---
+        function addClass() {
+            const std = document.getElementById('stdSelect').value;
+            const secRaw = document.getElementById('secInput').value;
+            
+            if(!std || !secRaw) return alert("Please fill all fields");
 
-        if(!std) return showMsg("Error", "Please select a Standard.");
-        if(!secRaw) return showMsg("Error", "Please enter at least one Section (e.g. A).");
+            const sections = secRaw.split(',').map(s => s.trim()).filter(s => s);
+            const type = (std >= 8) ? 'HS' : (std >= 5 ? 'UP' : 'LP');
 
-        // Split by comma and clean up
-        let sections = secRaw.split(',').map(s => s.trim()).filter(s => s !== "");
-
-        if(sections.length === 0) return showMsg("Error", "Invalid Section input.");
-
-        let type = (std >= 8) ? 'HS' : (std >= 5 ? 'UP' : 'LP');
-        let count = 0;
-
-        sections.forEach((sec, index) => {
-            // Check duplicate
-            let exists = db.classes.some(c => c.std == std && c.section.toLowerCase() === sec.toLowerCase());
-            if(!exists) {
-                db.classes.push({
-                    id: Date.now().toString() + "_" + index, // Ensure unique ID even in loop
-                    name: `Standard ${std} - ${sec}`,
-                    std: std,
-                    section: sec,
-                    subjects: JSON.parse(JSON.stringify(CURRICULA[type])),
-                    classTeacher: ""
-                });
-                count++;
-            }
-        });
-
-        document.getElementById('secInput').value = "";
-        save();
-        
-        if(count > 0) showMsg("Success", `Successfully added ${count} classes for Standard ${std}.`);
-        else showMsg("Info", "Classes already existed.");
-    }
-
-    function deleteClass(id) {
-        if(confirm("Remove this class?")) {
-            db.classes = db.classes.filter(c => c.id !== id);
+            sections.forEach((sec, idx) => {
+                const fullName = `Std ${std} - ${sec}`;
+                if(!db.classes.some(c => c.name === fullName)) {
+                    db.classes.push({
+                        id: Date.now() + "_" + idx,
+                        name: fullName,
+                        std: std,
+                        section: sec,
+                        subjects: JSON.parse(JSON.stringify(CURRICULA[type])),
+                        classTeacher: ""
+                    });
+                }
+            });
+            document.getElementById('secInput').value = "";
             save();
         }
-    }
 
-    // --- LOGIC: TEACHERS ---
-    function addTeacher() {
-        let name = document.getElementById('teacherNameInput').value;
-        if(name) {
-            db.teachers.push({ id: Date.now().toString(), name: name });
+        function deleteClass(id) {
+            if(confirm("Delete this class?")) {
+                db.classes = db.classes.filter(c => c.id !== id);
+                save();
+            }
+        }
+
+        // --- TEACHER LOGIC ---
+        function addTeacher() {
+            const name = document.getElementById('teacherNameInput').value;
+            if(!name) return;
+            db.teachers.push({ id: Date.now().toString(), name });
             document.getElementById('teacherNameInput').value = "";
             save();
         }
-    }
-    
-    function deleteTeacher(id) {
-        db.teachers = db.teachers.filter(t => t.id !== id);
-        save();
-    }
 
-    function resetData() { 
-        if(confirm("Are you sure? This will delete all data.")) { 
-            localStorage.removeItem('dark_tt_db_v2'); 
-            location.reload(); 
-        } 
-    }
+        function deleteTeacher(id) {
+            db.teachers = db.teachers.filter(t => t.id !== id);
+            save();
+        }
 
-    // --- RENDER UI ---
-    function render() {
-        // Render Class List
-        const cList = document.getElementById('classList');
-        if(db.classes.length === 0) cList.innerHTML = "<p style='color:var(--text-muted)'>No classes added.</p>";
-        else {
-            // Sort by standard then section
-            let sorted = [...db.classes].sort((a,b) => (a.std - b.std) || a.section.localeCompare(b.section));
-            cList.innerHTML = sorted.map(c => `
-                <div style="background:var(--input-bg); padding:10px; margin-bottom:8px; border-radius:4px; display:flex; justify-content:space-between; align-items:center; border:1px solid rgba(255,255,255,0.05);">
-                    <strong>${c.name}</strong>
-                    <button class="btn-danger" style="padding:4px 8px; font-size:12px;" onclick="deleteClass('${c.id}')">✕</button>
+        // --- RENDER FUNCTIONS ---
+        function renderUI() {
+            // 1. Classes
+            const cList = document.getElementById('classList');
+            cList.innerHTML = db.classes.sort((a,b) => a.std - b.std).map(c => `
+                <div class="flex justify-between items-center bg-black/20 p-3 rounded border border-gray-700">
+                    <span class="font-bold text-gray-200">${c.name}</span>
+                    <button onclick="deleteClass('${c.id}')" class="text-danger hover:text-white px-2">✕</button>
+                </div>
+            `).join('');
+
+            // 2. Teachers
+            const tBody = document.getElementById('teacherTableBody');
+            tBody.innerHTML = db.teachers.map(t => `
+                <tr class="hover:bg-white/5 transition">
+                    <td class="p-4 text-gray-300">${t.name}</td>
+                    <td class="p-4 text-right">
+                        <button onclick="deleteTeacher('${t.id}')" class="text-sm text-danger border border-danger px-3 py-1 rounded hover:bg-danger hover:text-white transition">Delete</button>
+                    </td>
+                </tr>
+            `).join('');
+
+            // 3. Allocations
+            renderAllocations();
+        }
+
+        function renderAllocations() {
+            const list = document.getElementById('allocList');
+            if(!db.classes.length || !db.teachers.length) {
+                list.innerHTML = `<div class="col-span-2 text-center text-gray-500 py-10">Please add Classes and Teachers first.</div>`;
+                return;
+            }
+
+            const teacherOpts = `<option value="">-- Select --</option>` + 
+                db.teachers.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+
+            list.innerHTML = db.classes.map(c => `
+                <div class="bg-surface border border-gray-600 rounded-xl p-5 shadow-lg">
+                    <div class="flex justify-between items-center mb-4 border-b border-gray-700 pb-3">
+                        <h4 class="font-bold text-lg text-accent">${c.name}</h4>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs text-gray-400 uppercase">Class Teacher</span>
+                            <select onchange="updateCT('${c.id}', this.value)" class="bg-black/30 text-sm border border-gray-600 rounded p-1 w-32">
+                                ${teacherOpts.replace(`value="${c.classTeacher}"`, `value="${c.classTeacher}" selected`)}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        ${Object.entries(c.subjects).map(([sub, count]) => {
+                            const tid = db.allocations.find(a => a.cid === c.id && a.sub === sub)?.tid || "";
+                            const assignedClass = tid ? "border-accent bg-accent/10" : "border-transparent bg-black/20";
+                            return `
+                                <div class="p-2 rounded border ${assignedClass} transition">
+                                    <div class="flex justify-between text-xs mb-1 text-gray-300">
+                                        <span>${sub}</span>
+                                        <span class="opacity-50">${count}</span>
+                                    </div>
+                                    <select onchange="updateAlloc('${c.id}', '${sub}', this.value)" class="w-full bg-transparent text-xs outline-none text-white">
+                                        ${teacherOpts.replace(`value="${tid}"`, `value="${tid}" selected`)}
+                                    </select>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
                 </div>
             `).join('');
         }
 
-        // Render Teachers
-        const tBody = document.querySelector('#teacherTable tbody');
-        tBody.innerHTML = db.teachers.length ? db.teachers.map(t => 
-            `<tr>
-                <td>${t.name}</td>
-                <td style="text-align:right;"><button class="btn-danger" style="padding:5px 10px;" onclick="deleteTeacher('${t.id}')">Delete</button></td>
-            </tr>`
-        ).join('') : '<tr><td colspan="2" style="text-align:center; color:var(--text-muted)">No teachers yet.</td></tr>';
-
-        // Render Allocations
-        renderAllocations();
-    }
-
-    function renderAllocations() {
-        const allocDiv = document.getElementById('allocList');
-        if(!db.classes.length || !db.teachers.length) {
-            allocDiv.innerHTML = "<p>Please add Classes and Teachers first.</p>";
-            return;
+        function updateCT(cid, tid) { db.classes.find(c => c.id === cid).classTeacher = tid; save(); }
+        function updateAlloc(cid, sub, tid) {
+            db.allocations = db.allocations.filter(a => !(a.cid === cid && a.sub === sub));
+            if(tid) db.allocations.push({ cid, sub, tid });
+            save();
         }
 
-        let teacherOpts = `<option value="">-- Select --</option>` + db.teachers.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+        // --- CONSTRAINTS UI LOGIC ---
+        function initConstraintUI() {
+            const select = document.getElementById('constraintTeacherSelect');
+            select.innerHTML = `<option value="">-- Select Teacher to Block Time --</option>` + 
+                db.teachers.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+        }
 
-        // Group allocs by standard for cleaner UI
-        let sortedClasses = [...db.classes].sort((a,b) => a.std - b.std);
+        function renderConstraintGrid() {
+            const tid = document.getElementById('constraintTeacherSelect').value;
+            const grid = document.getElementById('constraintGrid');
+            const hint = document.getElementById('gridHint');
 
-        allocDiv.innerHTML = sortedClasses.map(c => `
-            <div class="form-box">
-                <div style="display:flex; justify-content:space-between; margin-bottom:10px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:5px;">
-                    <strong style="color: var(--accent); font-size: 16px;">${c.name}</strong>
-                    <div>
-                        <span style="font-size:13px; color:var(--text-muted);">Class Teacher:</span> 
-                        <select style="width:150px; margin-bottom:0;" onchange="updateCT('${c.id}', this.value)">
-                            ${teacherOpts.replace(`value="${c.classTeacher}"`, `value="${c.classTeacher}" selected`)}
-                        </select>
-                    </div>
-                </div>
-                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px;">
-                    ${Object.entries(c.subjects).map(([sub, count]) => {
-                        let tid = db.allocations.find(a => a.cid === c.id && a.sub === sub)?.tid || "";
-                        let borderStyle = tid ? 'border-color: var(--accent);' : '';
-                        return `
-                        <div style="background: rgba(0,0,0,0.2); padding: 8px; border-radius: 4px; border: 1px solid transparent; ${borderStyle}">
-                            <div style="display:flex; justify-content:space-between; font-size: 12px; margin-bottom: 5px;">
-                                <span>${sub}</span>
-                                <span style="color: var(--text-muted)">${count} pds</span>
-                            </div>
-                            <select style="margin-bottom:0; font-size:13px;" onchange="updateAlloc('${c.id}', '${sub}', this.value)">
-                                ${teacherOpts.replace(`value="${tid}"`, `value="${tid}" selected`)}
-                            </select>
-                        </div>`;
-                    }).join('')}
-                </div>
-            </div>
-        `).join('');
-    }
-
-    function updateCT(cid, tid) { db.classes.find(c => c.id === cid).classTeacher = tid; save(); }
-    function updateAlloc(cid, sub, tid) {
-        db.allocations = db.allocations.filter(a => !(a.cid === cid && a.sub === sub));
-        if(tid) db.allocations.push({ cid, sub, tid });
-        save();
-    }
-
-    // --- EXCEL LOGIC ---
-    function downloadTemplate() {
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet([{Name:"John Doe"}]), "Teachers");
-        // Update template to imply single entry is standard
-        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet([{Standard:5, Section:"A"}, {Standard:5, Section:"B"}]), "Classes");
-        XLSX.writeFile(wb, "Timetable_Template.xlsx");
-    }
-
-    function handleExcel(input) {
-        const reader = new FileReader();
-        reader.onload = e => {
-            const wb = XLSX.read(e.target.result, {type:'array'});
-            if(wb.Sheets['Teachers']) {
-                XLSX.utils.sheet_to_json(wb.Sheets['Teachers']).forEach(r => {
-                    if(r.Name) db.teachers.push({id:Date.now()+Math.random().toString(), name:r.Name});
-                });
+            if(!tid) {
+                grid.classList.add('opacity-50', 'pointer-events-none');
+                hint.classList.remove('hidden');
+                return;
             }
-            if(wb.Sheets['Classes']) {
-                XLSX.utils.sheet_to_json(wb.Sheets['Classes']).forEach(r => {
-                    let type = (r.Standard >= 8) ? 'HS' : (r.Standard >= 5 ? 'UP' : 'LP');
-                    db.classes.push({
-                        id:Date.now()+Math.random().toString(), 
-                        name:`Standard ${r.Standard} - ${r.Section}`, 
-                        std:r.Standard,
-                        section: r.Section,
-                        subjects: JSON.parse(JSON.stringify(CURRICULA[type])), classTeacher:""
+
+            grid.classList.remove('opacity-50', 'pointer-events-none');
+            hint.classList.add('hidden');
+            grid.innerHTML = `<div class="p-2 font-bold text-accent">Day</div>`;
+            
+            // Header
+            for(let i=1; i<=8; i++) grid.innerHTML += `<div class="p-2 font-bold text-accent">P${i}</div>`;
+
+            // Body
+            const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
+            const blocked = db.constraints.blocked[tid] || [];
+
+            days.forEach((day, dIdx) => {
+                grid.innerHTML += `<div class="p-2 font-bold text-gray-400 bg-black/20 flex items-center justify-center">${day}</div>`;
+                for(let p=0; p<8; p++) {
+                    const key = `${dIdx}-${p}`; // Unique Key for Day-Period
+                    const isBlocked = blocked.includes(key);
+                    const bgClass = isBlocked ? 'bg-danger text-white' : 'bg-surface border border-gray-700 hover:bg-white/10 cursor-pointer';
+                    const text = isBlocked ? 'BUSY' : '';
+                    
+                    grid.innerHTML += `
+                        <div onclick="toggleConstraint('${tid}', '${key}')" 
+                             class="h-10 flex items-center justify-center text-xs rounded transition ${bgClass}">
+                            ${text}
+                        </div>
+                    `;
+                }
+            });
+        }
+
+        function toggleConstraint(tid, key) {
+            if(!db.constraints.blocked[tid]) db.constraints.blocked[tid] = [];
+            
+            const idx = db.constraints.blocked[tid].indexOf(key);
+            if(idx > -1) db.constraints.blocked[tid].splice(idx, 1);
+            else db.constraints.blocked[tid].push(key);
+            
+            save();
+            renderConstraintGrid(); // Re-render to show red box
+        }
+
+        // --- EXCEL IMPORT ---
+        function downloadTemplate() {
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet([{Name:"John Doe"}]), "Teachers");
+            XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet([{Standard:5, Section:"A"},{Standard:5, Section:"B"}]), "Classes");
+            XLSX.writeFile(wb, "Timetable_Template.xlsx");
+        }
+
+        function handleExcel(input) {
+            const reader = new FileReader();
+            reader.onload = e => {
+                const wb = XLSX.read(e.target.result, {type:'array'});
+                if(wb.Sheets['Teachers']) {
+                    XLSX.utils.sheet_to_json(wb.Sheets['Teachers']).forEach(r => {
+                        if(r.Name) db.teachers.push({id:Date.now()+Math.random().toString(), name:r.Name});
+                    });
+                }
+                if(wb.Sheets['Classes']) {
+                    XLSX.utils.sheet_to_json(wb.Sheets['Classes']).forEach(r => {
+                         const type = (r.Standard >= 8) ? 'HS' : (r.Standard >= 5 ? 'UP' : 'LP');
+                         db.classes.push({
+                            id:Date.now()+Math.random().toString(), 
+                            name:`Std ${r.Standard} - ${r.Section}`, 
+                            std:r.Standard, section:r.Section,
+                            subjects: JSON.parse(JSON.stringify(CURRICULA[type])), classTeacher:""
+                        });
+                    });
+                }
+                save(); alert("Imported!");
+            };
+            reader.readAsArrayBuffer(input.files[0]);
+        }
+
+        function resetData() {
+            if(confirm("Clear all data?")) { localStorage.removeItem('tailwind_tt_db'); location.reload(); }
+        }
+
+        // --- GENERATOR ENGINE ---
+        function generate() {
+            const out = document.getElementById('outputArea');
+            out.innerHTML = `<div class="text-center animate-pulse text-accent">Generating optimized schedule...</div>`;
+
+            // Configs
+            const mathMorning = document.getElementById('constMathTime').value === 'morning';
+            const avoidConsecutive = document.getElementById('constConsecutive').checked;
+            
+            setTimeout(() => {
+                const schedule = Array(5).fill().map(() => Array(8).fill().map(() => ({})));
+                let conflictCount = 0;
+
+                // 1. Lock Class Teachers (P1)
+                db.classes.forEach(c => {
+                    if(c.classTeacher) {
+                        for(let d=0; d<5; d++) {
+                            // Check constraint: Is class teacher blocked on P1?
+                            const isBlocked = db.constraints.blocked[c.classTeacher]?.includes(`${d}-0`);
+                            if(!isBlocked) {
+                                let sub = db.allocations.find(a => a.cid === c.id && a.tid === c.classTeacher)?.sub || "Class Teacher";
+                                schedule[d][0][c.id] = { sub, tid: c.classTeacher, type: 'fixed' };
+                            }
+                        }
+                    }
+                });
+
+                // 2. Prepare Queue
+                let queue = [];
+                db.classes.forEach(c => {
+                    Object.entries(c.subjects).forEach(([sub, count]) => {
+                        let alloc = db.allocations.find(a => a.cid === c.id && a.sub === sub);
+                        let tid = alloc ? alloc.tid : null;
+                        
+                        // Priority Score: 
+                        // Math/Science = 2 (High), Others = 1
+                        let priority = (sub.match(/Math|Physics|Chem/i)) ? 2 : 1;
+                        
+                        for(let i=0; i<count; i++) queue.push({ cid: c.id, sub, tid, priority });
                     });
                 });
-            }
-            save(); showMsg("Success", "Data imported successfully.");
-        };
-        reader.readAsArrayBuffer(input.files[0]);
-    }
+                
+                // Sort by Priority
+                queue.sort((a,b) => b.priority - a.priority);
 
-    // --- GENERATE ---
-    function generate() {
-        let out = document.getElementById('outputArea');
-        out.innerHTML = "<p style='color:var(--text-muted)'>Generating timetable...</p>";
-        
-        let schedule = Array(5).fill().map(() => Array(8).fill().map(() => ({})));
-        
-        // 1. Lock Class Teachers
-        db.classes.forEach(c => {
-            if(c.classTeacher) {
-                for(let d=0; d<5; d++) {
-                    let sub = db.allocations.find(a => a.cid === c.id && a.tid === c.classTeacher)?.sub || "Class Teacher";
-                    schedule[d][0][c.id] = { sub, tid: c.classTeacher };
-                }
-            }
-        });
-
-        // 2. Build Queue
-        let queue = [];
-        db.classes.forEach(c => {
-            Object.entries(c.subjects).forEach(([sub, count]) => {
-                let tid = db.allocations.find(a => a.cid === c.id && a.sub === sub)?.tid;
-                let priority = (sub.match(/Math|Physics|Chem/i)) ? 2 : 1;
-                for(let i=0; i<count; i++) queue.push({ cid: c.id, sub, tid, priority });
-            });
-        });
-        queue.sort((a,b) => b.priority - a.priority);
-
-        // 3. Solve
-        const isBusy = (tid, d, p) => tid && db.classes.some(c => schedule[d][p][c.id]?.tid === tid);
-
-        queue.forEach(item => {
-            let placed = false;
-            let days = [0,1,2,3,4].sort(()=>Math.random()-0.5);
-            let periods = (item.priority===2) ? [1,2,3,4,5,6,7] : [1,2,3,4,5,6,7];
-            
-            for(let d of days) {
-                for(let p of periods) {
-                    if(!schedule[d][p][item.cid] && !isBusy(item.tid, d, p)) {
-                        schedule[d][p][item.cid] = item;
-                        placed = true;
-                        break;
+                // 3. Helper: Check Availability
+                const isBusy = (tid, d, p, cid) => {
+                    if(!tid) return false;
+                    // a) Is teacher teaching elsewhere?
+                    for(let cls of db.classes) {
+                        if(schedule[d][p][cls.id]?.tid === tid) return true;
                     }
-                }
-                if(placed) break;
-            }
-        });
+                    // b) Is teacher blocked by User Constraint?
+                    if(db.constraints.blocked[tid]?.includes(`${d}-${p}`)) return true;
+                    
+                    // c) Consecutive check (Soft constraint, strictly enforced if checkbox checked)
+                    if(avoidConsecutive && p > 1) {
+                         if(schedule[d][p-1][cid]?.tid === tid && schedule[d][p-2][cid]?.tid === tid) return true;
+                    }
 
-        // 4. Render Result
-        let html = `<h2 style="color:var(--accent); text-align:center;">${db.schoolName}</h2>`;
-        // Sort output by standard
-        let sortedClasses = [...db.classes].sort((a,b) => (a.std - b.std) || a.section.localeCompare(b.section));
-        
-        sortedClasses.forEach(c => {
-            html += `<h3 style="color:var(--text-main); margin-top:30px; border-bottom:1px solid var(--accent); display:inline-block;">${c.name}</h3>`;
-            html += `<div class="tt-grid">
-                <div class="tt-head tt-cell">Day</div>`;
-            for(let i=1; i<=8; i++) html += `<div class="tt-head tt-cell">P${i}</div>`;
-            
-            ['MON','TUE','WED','THU','FRI'].forEach((day, d) => {
-                html += `<div class="tt-day tt-cell">${day}</div>`;
-                for(let p=0; p<8; p++) {
-                    let cell = schedule[d][p][c.id];
-                    let tName = cell ? (db.teachers.find(t=>t.id===cell.tid)?.name || 'TBA') : '';
-                    html += `<div class="tt-cell">
-                        ${cell ? `<b style="color:var(--accent)">${cell.sub}</b><br><small style="color:var(--text-muted)">${tName}</small>` : '-'}
-                    </div>`;
-                }
-            });
-            html += `</div>`;
-        });
-        out.innerHTML = html;
-    }
-</script>
+                    return false;
+                };
+
+                // 4. Fill Slots
+                queue.forEach(item => {
+                    let placed = false;
+                    let days = [0,1,2,3,4].sort(() => Math.random() - 0.5);
+                    
+                    // Logic: If Math & Morning Preference enabled, try P1-P4 first
+                    let preferredPeriods = [1,2,3,4,5,6,7]; // Default (Skip 0)
+                    if(mathMorning && item.priority === 2) preferredPeriods = [1,2,3,4];
+
+                    // Attempt 1: Preferred Slots
+                    for(let d of days) {
+                        for(let p of preferredPeriods) {
+                            if(!schedule[d][p][item.cid] && !isBusy(item.tid, d, p, item.cid)) {
+                                schedule[d][p][item.cid] = item;
+                                placed = true;
+                                break;
+                            }
+                        }
+                        if(placed) break;
+                    }
+
+                    // Attempt 2: Relax constraints (Any slot) if failed
+                    if(!placed) {
+                        let allPeriods = [1,2,3,4,5,6,7];
+                        for(let d of days) {
+                            for(let p of allPeriods) {
+                                if(!schedule[d][p][item.cid] && !isBusy(item.tid, d, p, item.cid)) {
+                                    schedule[d][p][item.cid] = item;
+                                    placed = true;
+                                    break;
+                                }
+                            }
+                            if(placed) break;
+                        }
+                    }
+                    
+                    if(!placed) conflictCount++;
+                });
+
+                // 5. Render
+                let html = `
+                    <div class="text-center mb-8 no-print">
+                        <h2 class="text-3xl font-bold text-accent">${db.schoolName}</h2>
+                        <p class="text-gray-400">Timetable Generated with ${conflictCount} unassigned periods</p>
+                    </div>
+                `;
+
+                // Group by Standard for cleaner print
+                const sortedClasses = db.classes.sort((a,b) => (a.std - b.std) || a.section.localeCompare(b.section));
+
+                sortedClasses.forEach(c => {
+                    html += `
+                        <div class="bg-white text-black p-4 rounded-lg shadow-lg mb-8 print-border break-inside-avoid">
+                            <div class="flex justify-between border-b-2 border-black mb-2 pb-1">
+                                <h3 class="text-xl font-bold uppercase">${c.name}</h3>
+                                <span class="text-sm font-bold">Class Teacher: ${db.teachers.find(t=>t.id===c.classTeacher)?.name || 'None'}</span>
+                            </div>
+                            <div class="grid grid-cols-9 border border-black text-xs">
+                                <div class="font-bold bg-gray-200 p-2 border-r border-black flex items-center justify-center">DAY</div>
+                                ${[1,2,3,4,5,6,7,8].map(i => `<div class="font-bold bg-gray-200 p-2 border-r border-black text-center">${i}</div>`).join('')}
+                                
+                                ${['MON','TUE','WED','THU','FRI'].map((day, d) => {
+                                    let rowHtml = `<div class="font-bold p-2 border-t border-r border-black flex items-center justify-center bg-gray-100">${day}</div>`;
+                                    for(let p=0; p<8; p++) {
+                                        let cell = schedule[d][p][c.id];
+                                        let tName = cell ? (db.teachers.find(t=>t.id===cell.tid)?.name || 'TBA') : '';
+                                        rowHtml += `
+                                            <div class="p-1 border-t border-r border-black text-center h-12 flex flex-col justify-center">
+                                                ${cell ? `<span class="font-bold block">${cell.sub}</span><span class="text-[10px] truncate">${tName}</span>` : '-'}
+                                            </div>
+                                        `;
+                                    }
+                                    return rowHtml;
+                                }).join('')}
+                            </div>
+                        </div>
+                    `;
+                });
+
+                out.innerHTML = html;
+            }, 500); // UI delay
+        }
+    </script>
 </body>
 </html>
